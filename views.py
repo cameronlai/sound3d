@@ -1,28 +1,31 @@
 from django.shortcuts import render
 from django.template import Context, Template
 
-from models import inputForm
-from models import font3dGenerator
+from models import UploadFileForm
+from models import sound3dGenerator
 import re
 
 message = {
     'none': '', 
-    'fail': 'Only upper case letters, numbers and space is allowed!!',
+    'fail': 'Fail in generation, please check input sound file!!',
 }
 
 # Create your views here.
 def index(request):
     status = 'none'
     indexContext = {'status': message['none']}
+
     if request.method == 'POST':
-        form = inputForm(request.POST)
+        form = UploadFileForm(request.POST, request.FILES)
         if form.is_valid():
-            inputString = form.cleaned_data['inputString']
-            if re.match('^[A-Z 1-9]*$', inputString):
-                mFont3dGenerator = font3dGenerator()
-                return mFont3dGenerator.generate(inputString)
-            else:
-                indexContext['status'] = message['fail']
-    form = inputForm()
+            #myOptimizerParser = extGenOptimizer1()
+            #events = myOptimizerParser.run(request.FILES)
+            # indexContext['fileReturnError'] = 'true'
+            indexContext['status'] = message['none']
+        else:
+            indexContext['status'] = message['fail']
+    else:
+        form = UploadFileForm()
+
     indexContext['form'] = form
-    return render(request, 'font3d/index.html', indexContext)
+    return render(request, 'sound3d/index.html', indexContext)

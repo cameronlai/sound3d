@@ -7,10 +7,10 @@ from subprocess import call
 import os
 
 # Create your models here.
-class inputForm(forms.Form):
-    inputString = forms.CharField(max_length=10)
+class UploadFileForm(forms.Form):
+    musicFile = forms.FileField()
 
-class font3dGenerator():
+class sound3dGenerator():
     def generate(self, inputString):
         font_dir = os.getcwd() + '/font3d/font3d-scad/'
         tmpScad = NamedTemporaryFile(suffix='.scad')
