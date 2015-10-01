@@ -17,11 +17,14 @@ def index(request):
 
     if request.method == 'POST':
         form = UploadFileForm(request.POST, request.FILES)
+        print form.is_valid()
         if form.is_valid():
-            #myOptimizerParser = extGenOptimizer1()
-            #events = myOptimizerParser.run(request.FILES)
-            # indexContext['fileReturnError'] = 'true'
-            indexContext['status'] = message['none']
+            mSound3dGenerator = sound3dGenerator()
+            ret = sound3dGenerator.generate(request.FILES['musicFile'])
+            if ret:
+                indexContext['status'] = message['none']
+            else:
+                indexContext['status'] = message['fail']
         else:
             indexContext['status'] = message['fail']
     else:
