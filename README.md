@@ -1,34 +1,34 @@
-# font3d
+# sound3d
 
-font3d is a Django app built to generate 3D Text STL files. 
+sound3d is a Django app built to generate 3D STL files from sound files.
 It utilizes OpenSCAD as the drawing tool.
 
-Currenly, only one basic font type is supported.
+Currenly, only the mp3 format type is supported.
 
 ## Set up
 
 1. Start Django Project 
 
   ``` bash
-  django-admin startproject font3d_project
-  cd font3d_project
+  django-admin startproject sound3d_project
+  cd sound3d_project
   ```
 
 2. Clone the git repository
 
   ``` bash
-  git clone https://github.com/cameronlai/font3d
+  git clone https://github.com/cameronlai/sound3d
   ```
   
 3. Edit settings.py in your project folder
 
   ``` bash
-  cd ../font3d_PROJECT
+  cd ../sound3d_PROJECT
   nano settings.py
   ```
 
-  > Add 'font3d' in INSTALLED_APPS
-  > Add 'font3d/static/', in STATICFILES_DIR
+  > Add 'sound3d' in INSTALLED_APPS
+  > Add 'sound3d/static/', in STATICFILES_DIR
 
 4. Edit urls.py in your project folder 
   
@@ -36,7 +36,7 @@ Currenly, only one basic font type is supported.
   nano urls.py
   ```
 
-  > Add url(r'$^', include('font3d.urls')), to urlpatterns
+  > Add url(r'$^', include('sound3d.urls')), to urlpatterns
   
 
 5. Run migrations with manage.py
@@ -54,7 +54,7 @@ Currenly, only one basic font type is supported.
   python manage.py runserver
   ```
 
-2. Launch web browser, enter correct IP address (Default is 127.0.0.1:8080) and your app is running.
+2. Launch web browser, enter correct IP address (Default is 127.0.0.1:8000) and your app is running.
 
 ## Dependencies
 
@@ -66,10 +66,7 @@ The app is released under the MIT License and more information can be found in t
 
 ## Contributions
 
-font3d is a project to create some interesting font types that uses 3D dimension, breaking through the conventional 2D font types. All code is written in Open SCAD and can be printed out with a 3D printer. 
+sound3d is a project to generate interesting 3D shapes from sound file data. 
+The output could then be be printed out with a 3D printer for visualization.
 
-Contributions for new font types and bug fixes are sincerely welcome!
-
-## Available font types
-
-- Basic - Basic font type drawn in Open SCAD
+Contributions for new ideas and bug fixes are sincerely welcome!
