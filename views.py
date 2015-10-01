@@ -7,7 +7,8 @@ import re
 
 message = {
     'none': '', 
-    'fail': 'Fail in generation, please check input sound file!!',
+    'failUpload': 'Fail in upload, please check input sound file!!',
+    'failGenerate': 'Fail in generation, please check input sound file!!',
 }
 
 # Create your views here.
@@ -17,18 +18,17 @@ def index(request):
 
     if request.method == 'POST':
         form = UploadFileForm(request.POST, request.FILES)
-        print form.is_valid()
         if form.is_valid():
             mSound3dGenerator = sound3dGenerator()
-            ret = sound3dGenerator.generate(request.FILES['musicFile'])
-            if ret:
+            response = mSound3dGenerator.generate(request.FILES['musicFile'])
+            if response:
                 indexContext['status'] = message['none']
+                return response
             else:
-                indexContext['status'] = message['fail']
+                indexContext['status'] = message['failGenerate']
         else:
-            indexContext['status'] = message['fail']
-    else:
-        form = UploadFileForm()
+            indexContext['status'] = message['failUpload']
 
+    form = UploadFileForm()
     indexContext['form'] = form
     return render(request, 'sound3d/index.html', indexContext)

@@ -12,9 +12,9 @@ from django.core.files.temp import NamedTemporaryFile
 # Signal processing
 import numpy as np
 import wave
-#import matplotlib.pyplot as plt
-#from mpl_toolkits.mplot3d import Axes3D
-#from matplotlib import cm
+import matplotlib.pyplot as plt
+from mpl_toolkits.mplot3d import Axes3D
+from matplotlib import cm
 
 # Create your models here.
 class UploadFileForm(forms.Form):
@@ -26,44 +26,58 @@ class sound3dGenerator():
 
         # Hard-coded configurations
         self.num_audio_sections = 10
-        self.num_downsample = 10
+        self.num_downsample = 20
 
     # This function returns the HTTP response with the STL file
-    def generate(self, musicFile):
+    def generate(self, inputMusicFile):
+        # Prepare input fie
+        tmpMusicFile = NamedTemporaryFile(suffix='.wav')
+        for chunk in inputMusicFile.chunks():
+            tmpMusicFile.write(chunk)
+
+        # Convert to wave file format
+
+        # Start generation
         tmpScad = NamedTemporaryFile(suffix='.scad')
         tmpDat = NamedTemporaryFile(suffix='.dat')
-
-        #points = self.generatePoints(musicFile)
-        #print points
-        #if points.shape[0] == 0:
-        #    return np.array([])
+        points = self.generatePoints(tmpMusicFile)
+        if points.shape[0] == 0:
+            return None
 
         # Print to dat file
-        tmpDat.write('10 2 3 4 5\n')
-        tmpDat.write('2 3 5 6 7\n')
+        tmpDat.seek(0)
+        for rowIdx in range(points.shape[0]):
+            rowPointStr = ' '.join(map(str, points[rowIdx]))
+            tmpDat.write(rowPointStr + '\n')
 
-        # Generate Scad file
-        tmpScad.write('surface(file = "' + tmpDat.name + '", center = true, convexity = 5);')
-        
         # Generate STL file
-        tmpScad.seek(0)        
-        #for line in tmpScad:
-        #    print line
+        currentDir = os.getcwd()
+        os.chdir(os.path.dirname(tmpDat.name))
+        tmpScad.write('surface(file = "' + os.path.basename(tmpDat.name) + '", center = true, convexity = 5);')  
+
+        tmpDat.seek(0)
+        tmpScad.seek(0)
         tmpStl = NamedTemporaryFile(suffix='.stl')
-        cmd = 'openscad -o ' +  tmpStl.name + ' ' + tmpScad.name
+        cmd = 'openscad -o ' + os.path.basename(tmpStl.name) + ' ' + os.path.basename(tmpScad.name)
+
         ret = call(cmd, shell=True)
-        tmpScad.close()
+        os.chdir(currentDir)
 
         # Copy STL file to HttpResponse
         response = HttpResponse(content_type='application/txt')
-        response['Content-Disposition'] = 'attachment; filename="%s.stl"' % inputString
-        f = FileDj(response)
-
+        response['Content-Disposition'] = 'attachment; filename="%s.stl"' % 'test'
         # Copy file over to the download file
         tmpStl.seek(0)
+        f = FileDj(response)
         for line in tmpStl:
             f.write(line)
+
+        # Close all temp files
+        tmpMusicFile.close()
+        tmpDat.close()
+        tmpScad.close()
         tmpStl.close()
+        
         return response
 
     # Opens the wave file and produces the points for spectrum
@@ -97,13 +111,13 @@ class sound3dGenerator():
             # FFT
             #timeInfo =np.linspace(0, len(tmpSignal)/fs, num=len(tmpSignal))
             #freqInfo = np.fft.fftfreq(timeInfo.shape[-1])
-            spectrumPoints[idx] = np.fft.fft(tmpSignal)
-            spectrumPoints[idx] = np.absolute(spectrumPoints[idx])
+            spectrumPoints[idx] = np.absolute(np.fft.fft(tmpSignal))
+            spectrumPoints[idx] = np.round(spectrumPoints[idx] / 1000.0, 2)
 
         waveFile.close()
-        print spectrumPoints
         return spectrumPoints
 
+# If run as main, plot will be made for quick verification adn visualization
 if __name__ == "__main__":
     mGenerator = sound3dGenerator()
     f = FileDj(open('static/test.wav'))
@@ -113,13 +127,12 @@ if __name__ == "__main__":
     x = np.arange(z.shape[0])
     y = np.arange(z.shape[1])
     x, y = np.meshgrid(x, y)
-    """
+    
     fig = plt.figure()
     ax = fig.gca(projection='3d')
     surf = ax.plot_surface(x, y, z, rstride=1, cstride=1, cmap=cm.coolwarm,
                            linewidth=0, antialiased=False)
 
     plt.show()
-    """
     
     
