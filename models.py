@@ -31,24 +31,19 @@ class sound3dGenerator():
     # This function returns the HTTP response with the STL file
     def generate(self, inputMusicFile):
         file_extension = os.path.splitext(inputMusicFile.name)[1]
-
-        # Prepare input fie
+        
+        # Convert to wave file format 
         tmpInputMusicFile = NamedTemporaryFile(suffix=file_extension)
         for chunk in inputMusicFile.chunks():
             tmpInputMusicFile.write(chunk)
 
-        # Convert to wave file format
         tmpWaveFile = NamedTemporaryFile(suffix='.wav')
-        if file_extension == '.wav':
-            tmpWaveFile = tmpInputMusicFile
-        else:
-            cmd = 'ffmpeg -i ' + tmpInputMusicFile.name + ' -y -acodec pcm_s16le -ac 1 ' + tmpWaveFile.name
-            print cmd
-            tmpWaveFile.seek(0)
-            tmpInputMusicFile.seek(0)
-            ret = call(cmd, shell=True)
-            if ret:
-                return None
+        tmpWaveFile.seek(0)
+        tmpInputMusicFile.seek(0)
+        cmd = 'ffmpeg -i ' + tmpInputMusicFile.name + ' -y -acodec pcm_s16le -ac 1 ' + tmpWaveFile.name
+        ret = call(cmd, shell=True)
+        if ret:
+            return None
 
         # Start generation
         tmpScad = NamedTemporaryFile(suffix='.scad')
@@ -102,7 +97,7 @@ class sound3dGenerator():
         inputSignal = waveFile.readframes(-1)
         inputSignal = np.fromstring(inputSignal, 'Int16')
         fs = waveFile.getframerate()
-
+        
         # If Stereo
         if waveFile.getnchannels() == 2:
             return np.array([])
