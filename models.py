@@ -67,33 +67,40 @@ class sound3dGenerator():
             f.write(line)
 
         # Close all temp files
-        tmpInputMusicFile.close()
-        tmpWaveFile.close()
         tmpDat.close()
         tmpScad.close()
         tmpStl.close()
         
         return response
 
-    # Opens the wave file and produces the points for spectrum
-    def generatePoints(self, inputMusicFile):
-        # Convert from received file format to wave
-        file_extension = os.path.splitext(inputMusicFile.name)[1]
+    def convertToWav(self, inputMusicFile, outputWaveFile):
+        """
+        Converts an input music file into a wave file with only one channel output only
+        """
+        cmd = 'ffmpeg -i ' + inputMusicFile.name + ' -y -acodec pcm_s16le -ac 1 ' + outputWaveFile.name
         
-        # Convert to wave file format 
+        outputWaveFile.seek(0)
+        inputMusicFile.seek(0)
+        ret = call(cmd, shell=True)
+        return ret
+
+    def generatePoints(self, inputMusicFile):
+        """
+        Opens the wave file and produces the points for the desired art shape
+        Currently, it only generates the spectrum
+        """
+        file_extension = os.path.splitext(inputMusicFile.name)[1]
         tmpInputMusicFile = NamedTemporaryFile(suffix=file_extension)
+        tmpWaveFile = NamedTemporaryFile(suffix='.wav')
         for chunk in inputMusicFile.chunks():
             tmpInputMusicFile.write(chunk)
 
-        tmpWaveFile = NamedTemporaryFile(suffix='.wav')
-        tmpWaveFile.seek(0)
-        tmpInputMusicFile.seek(0)
-        cmd = 'ffmpeg -i ' + tmpInputMusicFile.name + ' -y -acodec pcm_s16le -ac 1 ' + tmpWaveFile.name
-        ret = call(cmd, shell=True)
+        ret = self.convertToWav(tmpInputMusicFile, tmpWaveFile)
         if ret:
             return np.array([])
 
         # Start using the wave file
+        tmpWaveFile.seek(0)
         waveFile = wave.open(tmpWaveFile.name, 'r')
 
         inputSignal = waveFile.readframes(-1)
@@ -132,7 +139,7 @@ class sound3dGenerator():
 # If run as main, plot will be made for quick verification adn visualization
 if __name__ == "__main__":
     mGenerator = sound3dGenerator()
-    f = FileDj(open('static/dragondance.m4a'))
+    f = FileDj(open('static/imyours.m4a'))
     z = mGenerator.generatePoints(f)
     f.close()
 
