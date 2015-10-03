@@ -30,30 +30,15 @@ class sound3dGenerator():
 
     # This function returns the HTTP response with the STL file
     def generate(self, inputMusicFile):
-        file_extension = os.path.splitext(inputMusicFile.name)[1]
-        
-        # Convert to wave file format 
-        tmpInputMusicFile = NamedTemporaryFile(suffix=file_extension)
-        for chunk in inputMusicFile.chunks():
-            tmpInputMusicFile.write(chunk)
-
-        tmpWaveFile = NamedTemporaryFile(suffix='.wav')
-        tmpWaveFile.seek(0)
-        tmpInputMusicFile.seek(0)
-        cmd = 'ffmpeg -i ' + tmpInputMusicFile.name + ' -y -acodec pcm_s16le -ac 1 ' + tmpWaveFile.name
-        ret = call(cmd, shell=True)
-        if ret:
-            return None
-
         # Start generation
-        tmpScad = NamedTemporaryFile(suffix='.scad')
-        tmpDat = NamedTemporaryFile(suffix='.dat')
-        tmpWaveFile.seek(0)
-        points = self.generatePoints(tmpWaveFile)
+        points = self.generatePoints(inputMusicFile)
         if points.shape[0] == 0:
             return None
 
         # Print to dat file
+        tmpScad = NamedTemporaryFile(suffix='.scad')
+        tmpDat = NamedTemporaryFile(suffix='.dat')
+        tmpScad.seek(0)
         tmpDat.seek(0)
         for rowIdx in range(points.shape[0]):
             rowPointStr = ' '.join(map(str, points[rowIdx]))
@@ -91,8 +76,25 @@ class sound3dGenerator():
         return response
 
     # Opens the wave file and produces the points for spectrum
-    def generatePoints(self, musicFile):
-        waveFile = wave.open(musicFile.name, 'r')
+    def generatePoints(self, inputMusicFile):
+        # Convert from received file format to wave
+        file_extension = os.path.splitext(inputMusicFile.name)[1]
+        
+        # Convert to wave file format 
+        tmpInputMusicFile = NamedTemporaryFile(suffix=file_extension)
+        for chunk in inputMusicFile.chunks():
+            tmpInputMusicFile.write(chunk)
+
+        tmpWaveFile = NamedTemporaryFile(suffix='.wav')
+        tmpWaveFile.seek(0)
+        tmpInputMusicFile.seek(0)
+        cmd = 'ffmpeg -i ' + tmpInputMusicFile.name + ' -y -acodec pcm_s16le -ac 1 ' + tmpWaveFile.name
+        ret = call(cmd, shell=True)
+        if ret:
+            return np.array([])
+
+        # Start using the wave file
+        waveFile = wave.open(tmpWaveFile.name, 'r')
 
         inputSignal = waveFile.readframes(-1)
         inputSignal = np.fromstring(inputSignal, 'Int16')
@@ -130,7 +132,7 @@ class sound3dGenerator():
 # If run as main, plot will be made for quick verification adn visualization
 if __name__ == "__main__":
     mGenerator = sound3dGenerator()
-    f = FileDj(open('static/test.wav'))
+    f = FileDj(open('static/dragondance.m4a'))
     z = mGenerator.generatePoints(f)
     f.close()
 
