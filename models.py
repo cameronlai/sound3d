@@ -52,14 +52,17 @@ class sound3dGenerator():
         tmpDat.seek(0)
         tmpScad.seek(0)
         tmpStl = NamedTemporaryFile(suffix='.stl')
+        print tmpStl.name
         cmd = 'openscad -o ' + os.path.basename(tmpStl.name) + ' ' + os.path.basename(tmpScad.name)
-
+        print tmpStl.name
         ret = call(cmd, shell=True)
         os.chdir(currentDir)
 
         # Copy STL file to HttpResponse
         response = HttpResponse(content_type='application/txt')
-        response['Content-Disposition'] = 'attachment; filename="%s.stl"' % 'test'
+        response['Content-Disposition'] = 'attachment; filename="%s.stl"' \
+            % os.path.splitext(os.path.basename(inputMusicFile.name))[0]
+
         # Copy file over to the download file
         tmpStl.seek(0)
         f = FileDj(response)
