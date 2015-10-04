@@ -25,11 +25,16 @@ class sound3dGenerator():
         self.num_audio_sections = 10
         self.num_downsample = 20
 
+        # Input members
+
+        # Output members
+        self.points = None
+
     # This function returns the HTTP response with the STL file
     def generate(self, inputMusicFile):
         # Start generation
-        points = self.generatePoints(inputMusicFile)
-        if points.shape[0] == 0:
+        self.generatePoints(inputMusicFile)
+        if self.points.shape[0] == 0:
             return None
 
         # Print to dat file
@@ -37,7 +42,7 @@ class sound3dGenerator():
         tmpDat = NamedTemporaryFile(suffix='.dat')
         tmpScad.seek(0)
         tmpDat.seek(0)
-        self.writePointsToFile(tmpDat, points)
+        self.writePointsToFile(tmpDat)
 
         # Generate STL file
         currentDir = os.getcwd()
@@ -79,9 +84,9 @@ class sound3dGenerator():
         ret = call(cmd, shell=True)
         return ret
 
-    def writePointsToFile(self, fileObj, inputPoints):
-        for rowIdx in range(inputPoints.shape[0]):
-            rowPointStr = ' '.join(map(str, inputPoints[rowIdx]))
+    def writePointsToFile(self, fileObj):
+        for rowIdx in range(self.points.shape[0]):
+            rowPointStr = ' '.join(map(str, self.points[rowIdx]))
             fileObj.write(rowPointStr + '\n')
 
     def generatePoints(self, inputMusicFile):
@@ -134,17 +139,17 @@ class sound3dGenerator():
             spectrumPoints[idx] = np.round(spectrumPoints[idx] / 1000.0, 2)
 
         waveFile.close()
-        return spectrumPoints
+        self.points = spectrumPoints
 
 # If run as main, plot will be made for quick verification adn visualization
 if __name__ == "__main__":
     mGenerator = sound3dGenerator()
     f = FileDj(open('scad/Track1.wav'))
-    points = mGenerator.generatePoints(f)
+    mGenerator.generatePoints(f)
     f.close()
 
     f = open('scad/test.dat', 'w')
-    mGenerator.writePointsToFile(f, points)
+    mGenerator.writePointsToFile(f)
     f.close()
 
     
