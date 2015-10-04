@@ -1,0 +1,1 @@
+surface("test.dat", center = true, convexity = 5);
