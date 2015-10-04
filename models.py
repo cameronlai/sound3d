@@ -12,9 +12,6 @@ from django.core.files.temp import NamedTemporaryFile
 # Signal processing
 import numpy as np
 import wave
-import matplotlib.pyplot as plt
-from mpl_toolkits.mplot3d import Axes3D
-from matplotlib import cm
 
 # Create your models here.
 class UploadFileForm(forms.Form):
@@ -40,9 +37,7 @@ class sound3dGenerator():
         tmpDat = NamedTemporaryFile(suffix='.dat')
         tmpScad.seek(0)
         tmpDat.seek(0)
-        for rowIdx in range(points.shape[0]):
-            rowPointStr = ' '.join(map(str, points[rowIdx]))
-            tmpDat.write(rowPointStr + '\n')
+        self.writePointsToFile(tmpDat, points)
 
         # Generate STL file
         currentDir = os.getcwd()
@@ -83,6 +78,11 @@ class sound3dGenerator():
         inputMusicFile.seek(0)
         ret = call(cmd, shell=True)
         return ret
+
+    def writePointsToFile(self, fileObj, inputPoints):
+        for rowIdx in range(inputPoints.shape[0]):
+            rowPointStr = ' '.join(map(str, inputPoints[rowIdx]))
+            fileObj.write(rowPointStr + '\n')
 
     def generatePoints(self, inputMusicFile):
         """
@@ -139,19 +139,13 @@ class sound3dGenerator():
 # If run as main, plot will be made for quick verification adn visualization
 if __name__ == "__main__":
     mGenerator = sound3dGenerator()
-    f = FileDj(open('static/imyours.m4a'))
-    z = mGenerator.generatePoints(f)
+    f = FileDj(open('scad/Track1.wav'))
+    points = mGenerator.generatePoints(f)
     f.close()
 
-    x = np.arange(z.shape[0])
-    y = np.arange(z.shape[1])
-    x, y = np.meshgrid(x, y)
-    
-    fig = plt.figure()
-    ax = fig.gca(projection='3d')
-    surf = ax.plot_surface(x, y, z, rstride=1, cstride=1, cmap=cm.coolwarm,
-                           linewidth=0, antialiased=False)
+    f = open('scad/test.dat', 'w')
+    mGenerator.writePointsToFile(f, points)
+    f.close()
 
-    plt.show()
     
     
