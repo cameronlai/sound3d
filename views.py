@@ -19,8 +19,8 @@ def index(request):
     if request.method == 'POST':
         form = UploadFileForm(request.POST, request.FILES)
         if form.is_valid():
-            mSound3dGenerator = sound3dGenerator()
-            response = mSound3dGenerator.gen_online(request.FILES['musicFile'])
+            mSound3dGenerator = sound3dGenerator(request.FILES['musicFile'])
+            response = mSound3dGenerator.gen_online()
             if response:
                 indexContext['status'] = message['none']
                 return response
