@@ -19,6 +19,9 @@ class UploadFileForm(forms.Form):
 
 class sound3dGenerator():
     def __init__(self):
+        """
+        Constructor
+        """
         self.status = 0
 
         # Hard-coded configurations
@@ -30,10 +33,13 @@ class sound3dGenerator():
         # Output members
         self.points = None
 
-    # This function returns the HTTP response with the STL file
-    def generate(self, inputMusicFile):
+
+    def gen_online(self, inputMusicFile):
+        """
+        This function returns the HTTP response with the STL file
+        """
         # Start generation
-        self.generatePoints(inputMusicFile)
+        self.gen_offline(inputMusicFile)
         if self.points.shape[0] == 0:
             return None
 
@@ -42,7 +48,7 @@ class sound3dGenerator():
         tmpDat = NamedTemporaryFile(suffix='.dat')
         tmpScad.seek(0)
         tmpDat.seek(0)
-        self.writePointsToFile(tmpDat)
+        self.write_points_to_file(tmpDat)
 
         # Generate STL file
         currentDir = os.getcwd()
@@ -52,9 +58,7 @@ class sound3dGenerator():
         tmpDat.seek(0)
         tmpScad.seek(0)
         tmpStl = NamedTemporaryFile(suffix='.stl')
-        print tmpStl.name
         cmd = 'openscad -o ' + os.path.basename(tmpStl.name) + ' ' + os.path.basename(tmpScad.name)
-        print tmpStl.name
         ret = call(cmd, shell=True)
         os.chdir(currentDir)
 
@@ -76,7 +80,7 @@ class sound3dGenerator():
         
         return response
 
-    def convertToWav(self, inputMusicFile, outputWaveFile):
+    def _convert_to_wav(self, inputMusicFile, outputWaveFile):
         """
         Converts an input music file into a wave file with only one channel output only
         """
@@ -87,12 +91,15 @@ class sound3dGenerator():
         ret = call(cmd, shell=True)
         return ret
 
-    def writePointsToFile(self, fileObj):
+    def write_points_to_file(self, fileObj):
+        """
+        Writes points to file
+        """
         for rowIdx in range(self.points.shape[0]):
             rowPointStr = ' '.join(map(str, self.points[rowIdx]))
             fileObj.write(rowPointStr + '\n')
 
-    def generatePoints(self, inputMusicFile):
+    def gen_offline(self, inputMusicFile):
         """
         Opens the wave file and produces the points for the desired art shape
         Currently, it only generates the spectrum
@@ -103,7 +110,7 @@ class sound3dGenerator():
         for chunk in inputMusicFile.chunks():
             tmpInputMusicFile.write(chunk)
 
-        ret = self.convertToWav(tmpInputMusicFile, tmpWaveFile)
+        ret = self._convert_to_wav(tmpInputMusicFile, tmpWaveFile)
         if ret:
             return np.array([])
 
@@ -148,11 +155,11 @@ class sound3dGenerator():
 if __name__ == "__main__":
     mGenerator = sound3dGenerator()
     f = FileDj(open('scad/Track1.wav'))
-    mGenerator.generatePoints(f)
+    mGenerator.gen_offline(f)
     f.close()
 
     f = open('scad/test.dat', 'w')
-    mGenerator.writePointsToFile(f)
+    mGenerator.write_points_to_file(f)
     f.close()
 
     

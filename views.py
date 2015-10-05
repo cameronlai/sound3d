@@ -20,7 +20,7 @@ def index(request):
         form = UploadFileForm(request.POST, request.FILES)
         if form.is_valid():
             mSound3dGenerator = sound3dGenerator()
-            response = mSound3dGenerator.generate(request.FILES['musicFile'])
+            response = mSound3dGenerator.gen_online(request.FILES['musicFile'])
             if response:
                 indexContext['status'] = message['none']
                 return response
