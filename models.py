@@ -36,7 +36,7 @@ class sound3dGenerator():
         self.set_music_file(input_music_file) # self.music_file
 
         # Output members
-        self.points = None
+        self.points = np.zeros([self.num_audio_sections, self.num_downsample])
 
     def __del__(self):
         self.scad_file.close()
@@ -91,9 +91,7 @@ class sound3dGenerator():
         # Start using the wave file
         self._seek_all()
         waveFile = wave.open(self.wave_file.name, 'r')
-
-        inputSignal = waveFile.readframes(-1)
-        inputSignal = np.fromstring(inputSignal, 'Int16')
+        inputSignal = np.fromstring(waveFile.readframes(-1), 'Int16')
         fs = waveFile.getframerate()
         
         # If Stereo
@@ -101,18 +99,19 @@ class sound3dGenerator():
             return np.array([])
 
         # Pad zeros to fit in everything
-        num_pad_zeros = self.num_audio_sections - inputSignal.shape[0] % self.num_audio_sections
-        inputSignal = np.pad(inputSignal, (0,num_pad_zeros), 'constant', constant_values=(0,0))
+        pad_zero_remainder = inputSignal.shape[0] % self.num_audio_sections
+        if pad_zero_remainder:
+            inputSignal = np.pad(inputSignal, (0, self.num_audio_sections - pad_zero_remainder), 'constant', constant_values=(0,0))
 
         # Reshape
         reshapedSignal = inputSignal.reshape(self.num_audio_sections, -1)
-        self.points = np.zeros([self.num_audio_sections, self.num_downsample])
 
         # For loop to get all spectrum points
-        num_pad_zeros = self.num_downsample- reshapedSignal.shape[1] % self.num_downsample
+        pad_zero_remainder = reshapedSignal.shape[1] % self.num_downsample
         for idx in range(self.num_audio_sections):
             # Downsample
-            tmpSignal = np.pad(reshapedSignal[idx], (0, num_pad_zeros), 'constant', constant_values=(0,0))
+            if pad_zero_remainder:
+                tmpSignal = np.pad(reshapedSignal[idx], (0, self.num_downsample - pad_zero_remainder), 'constant', constant_values=(0,0))
             tmpSignal = tmpSignal.reshape(self.num_downsample, -1)
             tmpSignal = tmpSignal.mean(axis=1)
 
@@ -142,7 +141,8 @@ class sound3dGenerator():
         """
         Converts an input music file into a wave file with only one channel output only
         """
-        cmd = 'ffmpeg -i ' + self.music_file.name + ' -y -acodec pcm_s16le -ac 1' + self.wave_file.name
+        cmd = ' '.join(['ffmpeg -i', self.music_file.name, 
+                        '-y -acodec pcm_s16le -ac 1 -ar 44100', self.wave_file.name])
         self._seek_all()
         ret = call(cmd, shell=True)
         return ret
