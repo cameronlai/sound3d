@@ -142,7 +142,7 @@ class sound3dGenerator():
         """
         Converts an input music file into a wave file with only one channel output only
         """
-        cmd = 'ffmpeg -i ' + self.music_file.name + ' -y -acodec pcm_s16le -ac 1 ' + self.wave_file.name
+        cmd = 'ffmpeg -i ' + self.music_file.name + ' -y -acodec pcm_s16le -ac 1' + self.wave_file.name
         self._seek_all()
         ret = call(cmd, shell=True)
         return ret
@@ -151,9 +151,10 @@ class sound3dGenerator():
         """
         Writes points to file
         """
-        for rowIdx in range(self.points.shape[0]):
-            rowPointStr = ' '.join(map(str, self.points[rowIdx]))
-            fileObj.write(rowPointStr + '\n')
+        if self.points is not None:
+            for rowIdx in range(self.points.shape[0]):
+                rowPointStr = ' '.join(map(str, self.points[rowIdx]))
+                fileObj.write(rowPointStr + '\n')
 
 if __name__ == "__main__":
     f = FileDj(open('scad/Track1.wav'))
