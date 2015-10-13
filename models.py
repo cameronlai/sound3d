@@ -99,19 +99,17 @@ class sound3dGenerator():
             return np.array([])
 
         # Pad zeros to fit in everything
-        pad_zero_remainder = inputSignal.shape[0] % self.num_audio_sections
+        sample_per_section = self.num_audio_sections * self.num_downsample
+        pad_zero_remainder = inputSignal.shape[0] % sample_per_section
         if pad_zero_remainder:
-            inputSignal = np.pad(inputSignal, (0, self.num_audio_sections - pad_zero_remainder), 'constant', constant_values=(0,0))
+            inputSignal = np.pad(inputSignal, (0, sample_per_section - pad_zero_remainder), 'constant', constant_values=(0,0))
 
         # Reshape
         reshapedSignal = inputSignal.reshape(self.num_audio_sections, -1)
 
         # For loop to get all spectrum points
-        pad_zero_remainder = reshapedSignal.shape[1] % self.num_downsample
         for idx in range(self.num_audio_sections):
-            # Downsample
-            if pad_zero_remainder:
-                tmpSignal = np.pad(reshapedSignal[idx], (0, self.num_downsample - pad_zero_remainder), 'constant', constant_values=(0,0))
+            tmpSignal = reshapedSignal[idx]
             tmpSignal = tmpSignal.reshape(self.num_downsample, -1)
             tmpSignal = tmpSignal.mean(axis=1)
 
