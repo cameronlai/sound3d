@@ -22,9 +22,10 @@ class sound3dGenerator():
         """
         Constructor
         """
-        # Hard-coded configurations
-        self.num_audio_sections = 10
-        self.num_downsample = 20
+        # Dimension
+        self.num_audio_sections = 10 # mm, width
+        self.num_downsample = 20 # mm, length
+        self.height = 20 # mm
 
         # File members
         self.scad_file = NamedTemporaryFile(suffix='.scad')
@@ -60,7 +61,10 @@ class sound3dGenerator():
         # Generate STL file        
         current_dir = os.getcwd()
         os.chdir(os.path.dirname(self.data_file.name))
-        self.scad_file.write('surface(file = "' + os.path.basename(self.data_file.name) + '", center = true, convexity = 5);')  
+        self.scad_file.write('surface(file = "' + os.path.basename(self.data_file.name) + '");')
+        self.scad_file.write('translate([0,0,-2]) cube([' + 
+                             str(self.num_downsample-1) + ',' +
+                             str(self.num_audio_sections-1)     + ',2]);')
         cmd = 'openscad -o ' + os.path.basename(self.stl_file.name) + ' ' + os.path.basename(self.scad_file.name)
         self._seek_all()
         ret = call(cmd, shell=True)
@@ -117,7 +121,11 @@ class sound3dGenerator():
             #timeInfo =np.linspace(0, len(tmpSignal)/fs, num=len(tmpSignal))
             #freqInfo = np.fft.fftfreq(timeInfo.shape[-1])
             self.points[idx] = np.absolute(np.fft.fft(tmpSignal))
-            self.points[idx] = np.round(self.points[idx] / 1000.0, 2)
+
+        # Scaling to limits
+        max_value = np.max(self.points)
+        self.points = self.points / max_value * self.height
+        self.points = np.round(self.points, 2)
 
         waveFile.close()
 
