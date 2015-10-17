@@ -61,10 +61,7 @@ class sound3dGenerator():
         # Generate STL file        
         current_dir = os.getcwd()
         os.chdir(os.path.dirname(self.data_file.name))
-        self.scad_file.write('surface(file = "' + os.path.basename(self.data_file.name) + '");')
-        self.scad_file.write('translate([-1,-1,-2]) cube([' + 
-                             str(self.num_downsample+1) + ',' +
-                             str(self.num_audio_sections+1)     + ',2]);')
+        self.write_scad_to_file(self.scad_file, self.data_file.name)
         cmd = 'openscad -o ' + os.path.basename(self.stl_file.name) + ' ' + os.path.basename(self.scad_file.name)
         self._seek_all()
         ret = call(cmd, shell=True)
@@ -162,12 +159,27 @@ class sound3dGenerator():
                 rowPointStr = ' '.join(map(str, self.points[rowIdx]))
                 fileObj.write(rowPointStr + '\n')
 
+    def write_scad_to_file(self, fileObj, dataFileName):
+        """
+        Writes SCAD info to file
+        """
+        print fileObj
+        print dataFileName
+        #self.scad_file.write('surface(file = "' + os.path.basename(self.data_file.name) + '");\n')
+        fileObj.write('surface(file = "' + os.path.basename(dataFileName) + '");\n')
+        fileObj.write('translate([-1,-1,-2]) cube([' + 
+                      str(self.num_downsample+1) + ',' +
+                      str(self.num_audio_sections+1) + ',2]);\n')
+
 if __name__ == "__main__":
     f = FileDj(open('scad/Track1.wav'))
     mGenerator = sound3dGenerator(f)
     mGenerator.gen_offline()
     f.close()
 
-    f = open('scad/test.dat', 'w')
-    mGenerator.write_points_to_file(f)
-    f.close()
+    f_data = open('scad/test.dat', 'w')
+    f_scad = open('scad/test.scad', 'w')
+    mGenerator.write_points_to_file(f_data)
+    mGenerator.write_scad_to_file(f_scad, f_data.name)
+    f_data.close()
+    f_scad.close()
