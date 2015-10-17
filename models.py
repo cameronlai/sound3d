@@ -62,9 +62,9 @@ class sound3dGenerator():
         current_dir = os.getcwd()
         os.chdir(os.path.dirname(self.data_file.name))
         self.scad_file.write('surface(file = "' + os.path.basename(self.data_file.name) + '");')
-        self.scad_file.write('translate([0,0,-2]) cube([' + 
-                             str(self.num_downsample-1) + ',' +
-                             str(self.num_audio_sections-1)     + ',2]);')
+        self.scad_file.write('translate([-1,-1,-2]) cube([' + 
+                             str(self.num_downsample+1) + ',' +
+                             str(self.num_audio_sections+1)     + ',2]);')
         cmd = 'openscad -o ' + os.path.basename(self.stl_file.name) + ' ' + os.path.basename(self.scad_file.name)
         self._seek_all()
         ret = call(cmd, shell=True)
