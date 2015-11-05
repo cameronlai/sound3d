@@ -12,6 +12,7 @@ from django.core.files.temp import NamedTemporaryFile
 # Signal processing
 import numpy as np
 import wave
+from scipy.signal import butter, lfilter
 
 # Create your models here.
 class UploadFileForm(forms.Form):
@@ -23,7 +24,7 @@ class sound3dGenerator():
         Constructor
         """
         # Dimension
-        self.num_audio_sections = 10 # mm, width
+        self.num_audio_sections = 20 # mm, width
         self.num_downsample = 20 # mm, length
         self.height = 20 # mm
 
@@ -36,8 +37,8 @@ class sound3dGenerator():
         self.output_file_name = None
         self.set_music_file(input_music_file) # self.music_file
 
-        # Output members
-        self.points = np.zeros([self.num_audio_sections, self.num_downsample])
+        # Output members, hard-coded one point becomes a square surfacewith 4 elements
+        self.points = np.zeros([self.num_audio_sections * 2, self.num_downsample* 2])
 
     def __del__(self):
         self.scad_file.close()
@@ -117,7 +118,9 @@ class sound3dGenerator():
             # FFT
             #timeInfo =np.linspace(0, len(tmpSignal)/fs, num=len(tmpSignal))
             #freqInfo = np.fft.fftfreq(timeInfo.shape[-1])
-            self.points[idx] = np.absolute(np.fft.fft(tmpSignal))
+            tmpFFT = np.repeat(np.absolute(np.fft.fft(tmpSignal)), 2)
+            self.points[2*idx] = tmpFFT
+            self.points[2*idx+1] = tmpFFT
 
         # Scaling to limits
         max_value = np.max(self.points)
@@ -163,13 +166,11 @@ class sound3dGenerator():
         """
         Writes SCAD info to file
         """
-        print fileObj
-        print dataFileName
         #self.scad_file.write('surface(file = "' + os.path.basename(self.data_file.name) + '");\n')
         fileObj.write('surface(file = "' + os.path.basename(dataFileName) + '");\n')
         fileObj.write('translate([-1,-1,-2]) cube([' + 
-                      str(self.num_downsample+1) + ',' +
-                      str(self.num_audio_sections+1) + ',2]);\n')
+                      str(self.num_downsample*2+1) + ',' +
+                      str(self.num_audio_sections*2+1) + ',2]);\n')
 
 if __name__ == "__main__":
     f = FileDj(open('scad/Track1.wav'))
