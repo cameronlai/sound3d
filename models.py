@@ -26,7 +26,8 @@ class sound3dGenerator():
         # Dimension
         self.num_audio_sections = 20 # mm, width
         self.num_downsample = 20 # mm, length
-        self.height = 20 # mm
+        self.height = 50 # mm
+        self.sin_expansion = 20 # points
 
         # File members
         self.scad_file = NamedTemporaryFile(suffix='.scad')
@@ -38,7 +39,10 @@ class sound3dGenerator():
         self.set_music_file(input_music_file) # self.music_file
 
         # Output members, hard-coded one point becomes a square surfacewith 4 elements
-        self.points = np.zeros([self.num_audio_sections * 2, self.num_downsample* 2])
+        self.initial_points = np.zeros([self.num_audio_sections, self.num_downsample])
+        # The actual points are -1 because there is no points after last point
+        self.points = np.zeros([(self.num_audio_sections-1) * self.sin_expansion, 
+                                (self.num_downsample-1) * self.sin_expansion])
 
     def __del__(self):
         self.scad_file.close()
@@ -118,14 +122,29 @@ class sound3dGenerator():
             # FFT
             #timeInfo =np.linspace(0, len(tmpSignal)/fs, num=len(tmpSignal))
             #freqInfo = np.fft.fftfreq(timeInfo.shape[-1])
-            tmpFFT = np.repeat(np.absolute(np.fft.fft(tmpSignal)), 2)
-            self.points[2*idx] = tmpFFT
-            self.points[2*idx+1] = tmpFFT
+            tmpFFT = np.absolute(np.fft.fft(tmpSignal))
+            self.initial_points[idx] = tmpFFT
 
         # Scaling to limits
-        max_value = np.max(self.points)
-        self.points = self.points / max_value * self.height
-        self.points = np.round(self.points, 2)
+        max_value = np.max(self.initial_points)
+        self.initial_points = self.initial_points / max_value * self.height
+        self.initial_points = np.round(self.initial_points, 2)
+
+        # Generate sine interpolation between initial points
+        sin_ary = (np.sin(np.linspace(-np.pi/2, np.pi/2, self.sin_expansion)) + 1) * 0.5
+        for idx in range(self.num_audio_sections):
+            tmpPoints = self.initial_points[idx]
+            tmpDiff = np.diff(tmpPoints)
+            tmpLine = np.array([x * sin_ary for x in tmpDiff])
+            self.points[idx] = np.repeat(tmpPoints[:-1], self.sin_expansion) + tmpLine.ravel()
+
+        # Second sine interpolation between points
+        for idx in range(self.points.shape[1]):
+            # Only first num_audio_sections rows are valid
+            tmpPoints = self.points[0:self.num_audio_sections,idx]
+            tmpDiff = np.diff(tmpPoints)
+            tmpLine = np.array([x * sin_ary for x in tmpDiff])
+            self.points[:,idx] = np.repeat(tmpPoints[:-1], self.sin_expansion) + tmpLine.ravel()
 
         waveFile.close()
 
@@ -166,11 +185,15 @@ class sound3dGenerator():
         """
         Writes SCAD info to file
         """
-        #self.scad_file.write('surface(file = "' + os.path.basename(self.data_file.name) + '");\n')
+        x_scale = float(self.num_audio_sections) / ((self.num_audio_sections-1) * self.sin_expansion)
+        print x_scale
+        y_scale = float(self.num_downsample) / ((self.num_downsample-1) * self.sin_expansion)
+        print y_scale
+        fileObj.write('scale([%.3f, %.3f, 1])\n' % (x_scale, y_scale))
         fileObj.write('surface(file = "' + os.path.basename(dataFileName) + '");\n')
         fileObj.write('translate([-1,-1,-2]) cube([' + 
-                      str(self.num_downsample*2+1) + ',' +
-                      str(self.num_audio_sections*2+1) + ',2]);\n')
+                      str(self.num_downsample+2) + ',' +
+                      str(self.num_audio_sections+2) + ',2]);\n')
 
 if __name__ == "__main__":
     f = FileDj(open('scad/Track1.wav'))
